@@ -10,8 +10,9 @@ cleftask/
 ├── report.md              ← Complete paper details (models, results, tables, error analysis)
 ├── preferences.md         ← Title, authors, template, narrative decisions
 ├── memory.md              ← Session tracking, decision log, action items
+├── .gitignore
 ├── paper/
-│   ├── paper.tex          ← LaTeX paper (10 sections, 640 lines, ready to compile)
+│   ├── paper.tex          ← LaTeX paper (10 sections, 645 lines)
 │   └── paper.bib          ← 18 references (all real, verified citations)
 ├── sources/
 │   └── (original PDFs, DOCX, notebooks, ZIP)
@@ -22,11 +23,13 @@ cleftask/
 │       ├── LLaMA4Scout_Submission.ipynb
 │       ├── BART_TestInference.ipynb
 │       ├── README.md
-│       ├── dataset_statistics.ipynb     ← NEW: run in Colab for §4 stats
-│       └── qualitative_examples.py     ← NEW: extract examples for §8
-└── doc/
-    ├── related_work_analysis.txt       ← Updated with §3.5 hardcoded rephrase
-    └── author_review_list.md           ← 2 remaining action items (items 8, 9)
+│       ├── dataset_statistics.ipynb    ← run in Colab for §4 stats
+│       └── qualitative_examples.py    ← extract examples for §8
+├── doc/
+│   ├── related_work_analysis.txt
+│   └── author_review_list.md
+└── tokatrons_task11_LLaMA8B_val/
+    └── tokatrons_task11_LLaMA8B_val.json    ← LLaMA-8B validation output
 ```
 
 ## Key Facts (Condensed)
@@ -67,20 +70,27 @@ cleftask/
 | Author clarification items | `doc/author_review_list.md` |
 | LaTeX paper | `paper/paper.tex` |
 | Bibliography | `paper/paper.bib` |
+| GitHub repository | https://github.com/sujith0613/tokatrons-clef2026-simpletext |
+
+## GitHub Repo
+- **URL**: https://github.com/sujith0613/tokatrons-clef2026-simpletext
+- Created with `gh repo create`, pushed from local `E:\Desktop\SSN\cleftask`
+- Contains paper, notebooks, validation outputs, docs — 26 files in initial commit
 
 ## Current State
-- Paper written: 10 sections, ~644 lines, research publishing grade
-- All known factual issues fixed: author order, classifier (RoBERTa), v1 SARI, seed, FKGL provenance, CPU→T4 GPU, LLaMA-4 model string, hardcoded rephrase hypothesis
+- Paper written: 10 sections, ~645 lines, research publishing grade
+- All known factual issues fixed: author order, classifier (RoBERTa), v1 SARI, seed, FKGL provenance, CPU→T4 GPU, LLaMA-4 model string, hardcoded rephrase hypothesis, error cascade wording, FRE metric, repo URL
 - Dataset statistics added to §4.1: token lengths, vocab sizes, compression ratio, empty targets
 - Real citations from published proceedings (Michail+2024, Largey+2024, Marturi+2025)
 - API keys sanitized (4 real keys replaced with placeholder across 2 notebooks)
-- 1 remaining action item: qualitative examples (run script)
+- GitHub repo created and pushed with 2 commits
 
 ## Pending Action Items
-1. **Run `dataset_statistics.ipynb`** in Colab on training data → report stats for §4
+1. ~~**Run `dataset_statistics.ipynb`** in Colab on training data → report stats for §4~~ ✅ DONE
 2. **Run `qualitative_examples.py`** on merged JSONL output → insert LaTeX table into §8
 3. **Revoke old Groq API keys** at console.groq.com (4 real keys were exposed across 2 notebooks — user must revoke all)
 4. Install TeX distribution (MiKTeX/TinyTeX) and compile `paper/paper.tex` to verify
 5. Sanitize Google Drive mount paths in notebooks for GitHub release
 6. Final proofread and address any reviewer feedback
 7. Register paper on CEUR-WS submission system before deadline
+8. Get ORCIDs from teammates' papers and update author block
