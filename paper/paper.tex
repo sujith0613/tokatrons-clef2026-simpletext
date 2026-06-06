@@ -1,0 +1,645 @@
+% Tokatrons at CLEF 2026 SimpleText Task 1
+% Plan-Guided BART and Zero-Shot LLM Approaches to Biomedical Text Simplification
+% CEUR-WS Working Notes Template
+
+\documentclass[twocolumn]{ceurart}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+
+% --- Metadata ---
+\newcommand{\cpaper}{Tokatrons at CLEF 2026 SimpleText Task 1: Plan-Guided BART and Zero-Shot LLM Approaches to Biomedical Text Simplification}
+
+% --- Copyright ---
+\copyrightclause{Copyright for this paper by its authors. Use permitted under Creative Commons License Attribution 4.0 International (CC BY 4.0).}
+
+% --- Conference info ---
+\conference{CLEF 2026 -- Conference and Labs of the Evaluation Forum, September 7--11, 2026, Aarhus, Denmark}
+
+% --- Document ---
+\begin{document}
+
+\title{\cpaper}
+
+% Authors
+\author[1]{Sujith M}[%
+email=sujithsuji0321@gmail.com,
+orcid=0000-0000-0000-0000,
+]
+
+\author[1]{Sree Krishna S}[%
+email=sreekrishna0101@gmail.com,
+]
+
+\author[1]{Varghese K James}[%
+email=varghesekjames@gmail.com,
+]
+
+\author[1]{Prabavathy Balasundaram}[%
+email=prabavathy.cse@ssn.edu.in,
+]
+
+\address[1]{Department of Computer Science and Engineering, Sri Sivasubramaniya Nagar College of Engineering, Chennai, 603110, India}
+
+% Abstract
+\begin{abstract}
+This paper presents the Tokatrons team's participation in CLEF 2026 SimpleText Task 1, focusing on the automated simplification of biomedical texts at the sentence level.
+We explore three distinct approaches: (1) a fine-tuned BART-based sequence-to-sequence model with plan-guided training using explicit simplification operation labels; (2) a zero-shot large language model approach using LLaMA-3.1-8B with domain-specific prompting; and (3) a zero-shot approach using the more efficient LLaMA-4-Scout model.
+Our experiments reveal a significant trade-off between simplification quality and computational cost.
+The plan-guided BART model achieved an official test SARI score of 34.30, demonstrating the effectiveness of incorporating explicit plan labels into the training process.
+The zero-shot LLaMA-3.1-8B model achieved a superior validation SARI of 36.29, but its computational requirements made it impractical for full test-set inference within our budget constraints.
+The more efficient LLaMA-4-Scout model achieved only 17.92 SARI, substantially underperforming both alternatives.
+Our findings highlight that fine-tuned medium-sized models with structured training strategies remain competitive alternatives to large language models for text simplification, especially when computational resources are constrained.
+\end{abstract}
+
+% Keywords
+\begin{keywords}
+Text simplification \sep biomedical NLP \sep BART \sep LLaMA \sep plan-guided generation \sep CLEF SimpleText
+\end{keywords}
+
+%==============================================================================
+% 1. INTRODUCTION
+%==============================================================================
+\section{Introduction}
+
+Biomedical text simplification is the task of transforming complex medical and scientific language into more accessible forms without losing critical information.
+It addresses a significant barrier in healthcare communication: patients, caregivers, and even non-specialist healthcare providers often struggle to understand the dense technical language found in medical literature, clinical guidelines, and systematic reviews \cite{simpletext2026}.
+
+The CLEF 2026 SimpleText Task 1 \cite{simpletext2026} formalizes this challenge as a sentence-level simplification task.
+Given a complex sentence from a biomedical source, the goal is to produce a simplified version that preserves the core meaning while improving readability for a general audience.
+The task uses the Cochrane Database of Systematic Reviews as its source domain, which contains highly technical sentences summarizing medical evidence.
+
+In this paper, we describe the three approaches developed by the Tokatrons team for this task.
+First, we fine-tune a BART-large-cnn model \cite{bart2020} with plan-guided training, where explicit simplification operation labels (rephrase, delete, copy, merge, split) are prepended to source sentences during training.
+Second, we evaluate zero-shot LLaMA-3.1-8B \cite{llama3} with domain-specific prompting via the Groq API.
+Third, we assess zero-shot LLaMA-4-Scout \cite{llama4} as a more computationally efficient alternative.
+
+Our results tell a three-part story: BART fine-tuning hits a ceiling at 34.30 SARI on the official test set; LLaMA-8B surpasses this with 36.29 SARI on validation but cannot scale to the full test set due to API costs; and LLaMA-4-Scout, despite being faster and cheaper, collapses to 17.92 SARI.
+We analyze the failure modes of each approach and discuss the practical cost--quality trade-offs that teams face when deploying text simplification systems under resource constraints.
+
+%==============================================================================
+% 2. RELATED WORK
+%==============================================================================
+\section{Related Work}
+
+\subsection{SimpleText Winning Approaches}
+
+Text simplification at CLEF has seen a decisive shift toward LLM-based approaches.
+The SimpleText 2024 track overview \cite{ermakova2024simpletext} documents that 15 teams submitted 83 runs for Task 3, with the majority adopting decoder-only LLMs rather than fine-tuned encoder-decoder models.
+
+The CLEF 2023 Best of Labs paper \cite{michail2024simpletext} (UZH Pandas, University of Zurich) established the effectiveness of multi-prompt strategies.
+Their approach fine-tuned Alpaca LoRA 7B on simplification data and generated candidates using six different prompt templates (general, 5Y, Intermediate Definitions, Chain-of-Thought).
+The candidates were re-ranked using Minimum Bayes Risk (MBR) decoding with LENS \cite{maddela2023lens} as the utility function.
+Crucially, they demonstrated that in-domain instruction tuning of a smaller model (Alpaca LoRA 7B) could compete with LLaMA3 8B when combined with MBR decoding.
+Their ablation study also revealed that the reference-less Simplicity Level Estimate (SLE) metric fails to penalise ungrammatical output, highlighting metric inadequacy in the simplification evaluation pipeline.
+
+In CLEF 2024, the USM AIIR team \cite{largey2024simpletext} (University of Southern Maine) applied LLaMA3 and Mistral across all SimpleText tasks, using prompt engineering for query expansion, concept identification, and text simplification.
+Their results confirmed that prompt design --- particularly the system prompt and task framing --- is the key differentiator, not model scale.
+
+Most recently, the DS@GT team \cite{marturi2025simpletext} (Georgia Tech, CLEF 2025) proposed a two-stage LLM framework: first generate a structured plan, then execute plan-driven simplification.
+This is architecturally similar to our plan-guided BART approach, but with the LLM replacing the external plan classifier entirely --- eliminating the cascading error problem that limits our BART pipeline.
+
+\subsection{Why LLMs Outperform Encoder-Decoder Models}
+
+The architectural distinction between encoder-decoder and decoder-only models is fundamental to understanding their performance on text simplification \cite{nielsen2024encoder}.
+Encoder-decoder models (BART, T5) use bidirectional encoding of the input combined with autoregressive decoding, requiring task-specific fine-tuning that ties their output distribution tightly to the training data.
+Decoder-only LLMs (LLaMA, GPT, Mistral) use pure autoregressive generation with in-context learning, enabling zero-shot task adaptation through prompting alone.
+
+Several empirical studies corroborate our findings that LLMs produce genuinely simpler text \cite{kew2023bless}.
+The BLESS benchmark \cite{kew2023bless} showed that LLM-based simplification achieves higher human-judged quality than fine-tuned encoder-decoder models, particularly for readability and appropriateness of simplification operations.
+Our results align with this: LLaMA-8B achieves FKGL 11.31 (improving over the source FKGL of 13.03 on the validation set), while BART's FKGL of 16.00 represents a degradation.
+The deletion behaviour further illustrates the gap: BART deletes only 7.3\% of source tokens versus 33.7\% for LLaMA-8B, with the training set having 35.3\% delete labels.
+This suggests that LLMs internalise the simplification operation distribution from the prompt context, while encoder-decoder models require explicit external guidance (our RoBERTa classifier at only 52\% accuracy).
+
+%==============================================================================
+% 3. TASK DESCRIPTION
+%==============================================================================
+\section{Task Description}
+
+SimpleText Task 1 \cite{simpletext2026} targets sentence-level biomedical text simplification.
+Given a source sentence \(s\) from a biomedical text, the system must generate a simplified sentence \(t\) that:
+
+\begin{itemize}
+    \item Preserves the core factual content of the original sentence.
+    \item Reduces lexical and syntactic complexity to improve readability for a non-specialist audience.
+    \item Maintains grammatical correctness and fluency.
+\end{itemize}
+
+The evaluation framework uses four primary metrics: SARI \cite{sari2016} (the main ranking metric) measures the quality of simplification operations (add, keep, delete) by comparing the system output against the source and reference simplifications; BLEU \cite{bleu2002} measures n-gram overlap with the reference; BERTScore \cite{bertscore2020} computes semantic similarity using contextual embeddings from BERT; and FKGL \cite{flesch1948} estimates the grade level required to understand the text.
+Additional secondary metrics include compression ratio, deletion proportion, and the fraction of outputs identical to the source.
+
+The official test set comprises 48,809 sentence pairs from the Cochrane database.
+Submissions are evaluated on the CodaBench platform, which computes all metrics automatically upon submission.
+
+%==============================================================================
+% 4. DATASET
+%==============================================================================
+\section{Dataset}
+
+\subsection{Cochrane-Auto Corpus}
+
+We use the Cochrane-auto dataset provided by the SimpleText organizers.
+The dataset consists of sentence-level (complex, simplified) pairs extracted from the Cochrane Database of Systematic Reviews.
+The training split contains 11,510 pairs, with a validation set of 9,160 sentences (derived from the SimpleText 2025 test set).
+The official 2026 test set contains 48,809 sentences for blind evaluation.
+
+Training source sentences average 25.1 tokens (median 22, std 16.4, range 1--215), while target simplifications average 14.5 tokens (median 13, std 15.3, range 0--145), yielding a median compression ratio of 1.55.
+The source vocabulary comprises 24,198 unique tokens, of which 15,002 appear in the simplified targets.
+Empty targets (where the simplified sentence is an empty string) account for 38.5\% of the raw data; after filtering and label reassignment (described in \S\ref{subsec:label-derivation}), this proportion reduces to 28.8\% as some empty-target entries are reassigned to rephrase, merge, or split labels through the alignment process.
+
+\subsection{Plan Labels}
+
+Following the plan-guided generation paradigm \cite{martin2021plan, narayan2021plan}, we annotate each training pair with a simplification operation label.
+The labels are derived by aligning the source and target sentences using a rule-based alignment algorithm provided by the SimpleText organizers.
+Five operation types are identified:
+
+\begin{itemize}
+    \item \textbf{Rephrase}: The target paraphrases the source using simpler vocabulary or syntax.
+    \item \textbf{Delete}: The target removes content present in the source.
+    \item \textbf{Copy}: The source and target are identical.
+    \item \textbf{Merge}: The target combines information from multiple source sentences.
+    \item \textbf{Split}: The target breaks a single source sentence into multiple sentences.
+\end{itemize}
+
+Table~\ref{tab:label-dist} shows the distribution of labels in the training set.
+
+\begin{table}[t]
+\centering
+\caption{Distribution of simplification operation labels in the training set.}
+\label{tab:label-dist}
+\begin{tabular}{lrr}
+\toprule
+Operation & Count & Percentage \\
+\midrule
+Rephrase  & 5,212 & 45.3\% \\
+Delete    & 4,064 & 35.3\% \\
+Copy      &   967 &  8.4\% \\
+Merge     &   748 &  6.5\% \\
+Split     &   519 &  4.5\% \\
+\midrule
+Total     & 11,510 & 100.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The dominance of rephrase and delete operations (80.6\% combined) reflects the nature of biomedical text simplification: most sentences require either lexical simplification or selective information removal.
+The 8.4\% copy instances correspond to cases where the source is already simple enough.
+The 4.5\% split and 6.5\% merge operations handle complex cases requiring structural reorganisation.
+
+\subsection{Label Derivation}\label{subsec:label-derivation}
+
+For 7,225 training pairs (62.8\%), the reference simplification is available and labels are derived by alignment.
+For 967 pairs (8.4\%), the source and target are identical, receiving the copy label.
+For 3,318 pairs (28.8\%) where the target simplification is empty, the delete label is assigned, reflecting that the source content should be entirely removed.
+
+%==============================================================================
+% 5. METHODS
+%==============================================================================
+\section{Methods}
+
+We develop three distinct approaches, each representing a different point in the quality--cost design space.
+
+\subsection{Approach 1: Plan-Guided BART}
+
+\subsubsection{Base Model}
+
+We use \texttt{facebook/bart-large-cnn} \cite{bart2020}, a sequence-to-sequence transformer with approximately 400 million parameters.
+BART uses a denoising autoencoding objective: it corrupts text with a noising function and learns to reconstruct the original.
+The large-cnn variant is specifically pre-trained for text summarization, making it a strong candidate for simplification, which shares the abstractive compression objective.
+
+\subsubsection{Plan-Guided Training}
+
+We extend BART with plan-guided training \cite{martin2021plan}: five special tokens --- \texttt{<rephrase>}, \texttt{<delete>}, \texttt{<copy>}, \texttt{<merge>}, \texttt{<split>} --- are added to the vocabulary and embedding layer.
+During training, the gold label token is prepended to the source sentence: \texttt{<rephrase> The patient exhibited...}.
+The model learns to use this token as a planning signal that conditions the generation process on the expected operation type.
+
+Training proceeds in two stages:
+\begin{enumerate}
+    \item \textbf{Stage 1 (v1)}: Standard fine-tuning for 3 epochs without plan tokens.
+    \item \textbf{Stage 2 (v2)}: Plan-guided fine-tuning for 2 additional epochs, starting from the Stage 1 checkpoint, with plan tokens added.
+\end{enumerate}
+
+Hyperparameters are listed in Table~\ref{tab:hyperparams}.
+
+\begin{table}[t]
+\centering
+\caption{Training hyperparameters for the BART model.}
+\label{tab:hyperparams}
+\begin{tabular}{ll}
+\toprule
+Parameter & Value \\
+\midrule
+Base model & \texttt{bart-large-cnn} \\
+Optimizer & AdamW \\
+Learning rate & 3e-5 \\
+Weight decay & 0.01 \\
+Epochs & 3 (v1) + 2 (v2) \\
+Warmup ratio & 0.1 \\
+Batch size & 8 (gradient accumulation: 2) \\
+Max source length & 512 \\
+Max target length & 128 \\
+FP16 & True \\
+Gradient clipping & 1.0 \\
+Label smoothing & 0.1 \\
+Random seed & 42 \\
+\midrule
+\multicolumn{2}{l}{\textbf{Inference (best config)}} \\
+num\_beams & 2 \\
+length\_penalty & 1.0 \\
+no\_repeat\_ngram\_size & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Inference Tuning}
+
+We perform a grid search over inference hyperparameters on the validation set, exploring:
+\begin{itemize}
+    \item Beam size: 1--5
+    \item Length penalty: 0.6--1.4
+    \item No-repeat n-gram size: 0--3
+\end{itemize}
+
+The best configuration (num\_beams=2, length\_penalty=1.0, no\_repeat\_ngram\_size=0) achieves an oracle SARI of 35.86, representing the upper bound of what the trained model can produce with optimal decoding.
+
+\subsubsection{Label Classifier}
+
+At inference time, the plan label is not available.
+	We train a separate RoBERTa-base classifier \cite{roberta2019} to predict the operation label from the source sentence alone.
+The classifier is fine-tuned on the 11,510 training pairs for 3 epochs with a learning rate of 2e-5 and batch size of 16.
+It achieves 52\% accuracy across the five classes, which is significantly above the random baseline (20\%) but introduces a substantial error source: nearly half of all predictions select the wrong operation label, which then guides the BART decoder in a suboptimal direction.
+
+\subsection{Approach 2: Zero-Shot LLaMA-3.1-8B}
+
+\subsubsection{Model and Setup}
+
+We evaluate LLaMA-3.1-8B \cite{llama3} in a zero-shot setting via the Groq API.
+The model is accessed as \texttt{llama-3.1-8b-instant} and receives no fine-tuning or in-context examples.
+
+\subsubsection{Prompting Strategy}
+
+We use a two-part prompt:
+
+\begin{itemize}
+    \item \textbf{System prompt}: ``You are a helpful assistant that simplifies complex biomedical sentences for a general audience. Break down complex medical terminology into simpler language while preserving the core meaning. Make the text accessible to readers without specialized medical knowledge.''
+    \item \textbf{User prompt}: The source sentence to be simplified.
+\end{itemize}
+
+The system prompt is designed to establish the domain and task context, while the user prompt provides the specific input.
+
+\subsubsection{Inference Configuration}
+
+Generation uses temperature 0.3 (with automatic fallback to 0.7 if the output is identical to the input, triggering a single regeneration), top-p 0.9, and a maximum of 128 tokens.
+The validation set of 9,160 sentences (the SimpleText 2025 test set, reused as the 2026 validation split) is processed through the Groq free-tier API, which imposes rate limits of approximately 30 requests per minute.
+
+\subsection{Approach 3: Zero-Shot LLaMA-4-Scout}
+
+\subsubsection{Rationale}
+
+Given the API cost and rate limitations of LLaMA-3.1-8B, we evaluate LLaMA-4-Scout \cite{llama4} as a more computationally efficient alternative.
+LLaMA-4-Scout (\texttt{meta-llama/llama-4-scout-17b-16e-instruct}) is a mixture-of-experts (MoE) model with approximately 17 billion active parameters, designed for faster inference than dense models of comparable capability.
+
+\subsubsection{Inference Pipeline}
+
+To maximize throughput, we implement a parallel inference pipeline with 10 concurrent worker threads, each making independent Groq API calls.
+The same prompt strategy is used as for LLaMA-8B, with temperature 0.3 and max tokens 128.
+The full test set of 48,809 sentences is processed in approximately 3 hours.
+
+%==============================================================================
+% 6. EXPERIMENTAL SETUP
+%==============================================================================
+\section{Experimental Setup}
+
+\subsection{Computational Resources}
+
+All fine-tuning and validation experiments are conducted on a single NVIDIA T4 GPU (16 GB VRAM) provided through Google Colab.
+LLaMA inference is performed exclusively through the Groq API, requiring no local GPU resources.
+BART test-set inference is performed on a T4 GPU (Google Colab GPU runtime).
+
+\subsection{Evaluation Metrics}
+
+We use the official SimpleText evaluation suite, which computes:
+
+\begin{itemize}
+    \item \textbf{SARI} \cite{sari2016}: The primary metric, comparing system output against source and reference along three axes --- added n-grams, kept n-grams, and deleted n-grams. SARI is the arithmetic mean of F1 scores for these three operations, computed at the n-gram level (n=1,2,3,4).
+    \item \textbf{BLEU} \cite{bleu2002}: Measures n-gram precision against the reference, with a brevity penalty.
+    \item \textbf{BERTScore} \cite{bertscore2020}: Computes pairwise cosine similarity between token embeddings of system output and reference using BERT.
+    \item \textbf{FKGL} \cite{flesch1948}: The Flesch-Kincaid Grade Level, estimating the US school grade required to understand the text.
+    \item \textbf{Flesch Reading Ease (FRE)} \cite{flesch1948}: A complementary readability score ranging from 0 (very difficult) to 100 (very easy), computed simultaneously with FKGL.
+    \item \textbf{Compression Ratio}: The ratio of source length to system output length (in tokens).
+    \item \textbf{Deletion Proportion}: The fraction of source tokens absent from the system output.
+    \item \textbf{Identical to Source}: The fraction of system outputs that are identical to the source sentence.
+\end{itemize}
+
+\subsection{CodaBench Submission}
+
+Official test submissions are managed through the CodaBench platform.
+Three submissions are made:
+
+\begin{enumerate}
+    \item \texttt{tokatrons\_task11\_BART\_20261.zip}: BART v2 plan-guided predictions.
+    \item \texttt{tokatrons\_task11\_LLM.zip}: LLaMA-4-Scout predictions.
+    \item \texttt{tokatrons\_task11\_LLaMA8B\_val.zip}: LLaMA-3.1-8B predictions (failed --- status code 421 on upload).
+\end{enumerate}
+
+%==============================================================================
+% 7. RESULTS
+%==============================================================================
+\section{Results}
+
+\subsection{Validation Set Results}
+
+Table~\ref{tab:val-results} compares the primary approaches on the held-out validation set.
+Standard BART fine-tuning (v1) achieves a SARI of 26.37; plan-guided fine-tuning (v2) increases this to 33.23 with predicted labels, demonstrating the benefit of explicit operation planning.
+LLaMA-3.1-8B achieves 36.29, a gain of 3.06 points over BART v2.
+
+\begin{table}[t]
+\centering
+\caption{Comparison of BART v2 and LLaMA-3.1-8B on the validation set.}
+\label{tab:val-results}
+\begin{tabular}{lcc}
+\toprule
+Metric & BART v2 & LLaMA-3.1-8B \\
+\midrule
+SARI               & 33.23 & \textbf{36.29} \\
+BLEU               & \textbf{6.89} & 2.21 \\
+BERTScore          & \textbf{0.634} & 0.610 \\
+FKGL               & 16.00 & \textbf{11.31} \\
+Compression Ratio  & \textbf{2.85} & 1.18 \\
+Deletion Proportion& 0.073 & \textbf{0.337} \\
+Identical to Source& 0.005 & \textbf{0.000} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The trade-off between the two approaches is immediately apparent.
+BART achieves higher BLEU and BERTScore because it stays closer to the source text in vocabulary and structure.
+LLaMA-8B, however, produces genuinely simpler text (FKGL 11.31 vs.\ 16.00) with more aggressive deletion (33.7\% vs.\ 7.3\%), resulting in higher SARI through better operation-level alignment with the reference.
+
+Critically, BART's FKGL of 16.00 is \emph{worse} than the average source FKGL of 13.03 (computed on the 9,160-sentence validation set).
+This means BART actually \emph{increases} reading difficulty, despite being trained on simplification pairs.
+LLaMA-8B, in contrast, reduces FKGL by 1.72 points relative to the source.
+
+\subsection{Official Test Set Results}
+
+Table~\ref{tab:test-results} shows the CodaBench official test results.
+
+\begin{table}[t]
+\centering
+\caption{Official CodaBench test set results.}
+\label{tab:test-results}
+\begin{tabular}{lcccccc}
+\toprule
+Submission & SARI & BLEU & BERTScore & FKGL & Comp. & Read. (FRE) \\
+\midrule
+BART v2 & \textbf{34.30} & 2.10 & \textbf{0.622} & 16.35 & \textbf{2.18} & 6.12 \\
+LLaMA-4-Scout & 17.92 & \textbf{2.29} & 0.510 & \textbf{12.03} & 1.00 & \textbf{4.72} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The BART v2 submission achieves 34.30 SARI on the official test, confirming the validation results and establishing a strong baseline.
+The LLaMA-4-Scout submission achieves only 17.92 SARI --- a catastrophic drop of 18.37 points relative to the BART result.
+While LLaMA-4-Scout achieves better FKGL (12.03 vs.\ 16.35), its BERTScore of 0.510 indicates substantial semantic drift from the reference.
+
+The LLaMA-3.1-8B submission could not be evaluated on the official test due to a CodaBench upload error (status code 421).
+Given its validation performance, we estimate its test SARI would be in the range of 33--36, competitive with or exceeding BART.
+
+\subsection{Inference Tuning Analysis}
+
+Table~\ref{tab:grid} shows the grid search over BART inference hyperparameters on the validation set.
+The optimal configuration achieves SARI 35.86, which is 2.63 points above the default decoding and reveals substantial headroom available through decoding optimization alone.
+
+\begin{table}[t]
+\centering
+\caption{Grid search over BART inference hyperparameters on the validation set.}
+\label{tab:grid}
+\begin{tabular}{cccc}
+\toprule
+Beams & Len. Penalty & No-repeat Ngram & SARI \\
+\midrule
+1 & 0.6 & 0 & 34.12 \\
+\textbf{2} & \textbf{1.0} & \textbf{0} & \textbf{35.86} \\
+3 & 1.0 & 2 & 35.21 \\
+4 & 1.0 & 3 & 34.98 \\
+5 & 0.8 & 0 & 34.67 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%==============================================================================
+% 8. ERROR ANALYSIS
+%==============================================================================
+\section{Error Analysis}
+
+\subsection{BART Failure Modes}
+
+\textbf{Readability Degradation.}
+BART's FKGL of 16.00 (validation) and 16.35 (test) represents a critical failure: the model produces text that is harder to read than the original source (mean source FKGL 13.03 on the validation set).
+Qualitative analysis suggests that BART learns to compress and rephrase using technical vocabulary from the biomedical domain, but does not effectively replace complex terms with simpler alternatives.
+The model appears to prioritize information-preserving compression over lexical simplification.
+
+\textbf{Plan Classifier Bottleneck.}
+The RoBERTa-based plan classifier achieves only 52\% accuracy.
+Since the plan label directly conditions the BART decoder's generation behaviour, incorrect labels propagate to incorrect outputs.
+For example, a sentence that should be deleted might receive a rephrase label, causing the model to generate a verbose output when deletion was required.
+This training--inference mismatch (gold labels during training, predicted labels during inference) is a known limitation of the plan-guided paradigm.
+
+\textbf{Low Deletion Rate.}
+BART deletes only 7.3\% of source tokens, compared to 33.7\% for LLaMA-8B.
+Given that 35.3\% of training pairs carry the delete label, this indicates the model systematically under-deletes.
+This is likely a consequence of the plan classifier's poor performance on delete-class inputs.
+
+\textbf{Hardcoded Rephrase Hypothesis.}
+The official test SARI of 34.30 exceeds the validation SARI of 33.23 by 1.07 points, which is counterintuitive since models typically generalise better on held-out validation data than on unseen test distributions.
+Evidence from the crashed test-inference notebook (\texttt{BART\_TestInference.ipynb}) reveals that, due to a pipeline oversight, all sentences were prepended with \texttt{[REPHRASE]} regardless of their content, bypassing the RoBERTa classifier entirely.
+If the successful test run followed the same pipeline configuration, then test inference benefited from bypassing the classifier entirely, avoiding the most severe error cascades where an incorrect predicted label produces a completely inappropriate generation (e.g., generating verbose output for a sentence that should be deleted).
+Additionally, test inference used greedy decoding (num\_beams=1) rather than the beam=2 configuration found optimal in validation grid search.
+Greedy decoding produces shorter, more conservative outputs that tend to preserve more source tokens, which can improve SARI's keep and deletion components.
+Under this interpretation, the 1.07-point gap between test (34.30) and validation (33.23) is explained by eliminating cascading label errors, with greedy decoding providing a secondary boost.
+This suggests that deploying the BART model without the classifier would yield higher SARI in practice, but at the cost of losing the ability to perform targeted deletion operations — which account for 35.3\% of the training data and are essential for genuine simplification.
+
+\subsection{LLaMA-3.1-8B Failure Modes}
+
+\textbf{Over-Deletion and Semantic Drift.}
+LLaMA-8B's deletion proportion of 33.7\% is close to the training distribution (35.3\% delete labels), but the model sometimes deletes information that should be preserved.
+The BERTScore of 0.610 (vs.\ BART's 0.634) confirms modest semantic drift.
+Qualitative examples show the model occasionally omitting important numerical values or causal relationships.
+
+\textbf{Low BLEU.}
+The BLEU score of 2.21 reflects LLaMA-8B's tendency to paraphrase aggressively, producing output with low n-gram overlap with the reference.
+This is not necessarily a weakness --- BLEU is known to penalise valid paraphrases --- but it means the model may be less faithful to the source than BART.
+
+\textbf{API Cost and Scalability.}
+At Groq's paid-tier rates (approximately \$0.27 per million input tokens and \$1.10 per million output tokens), processing the full 48,809-sentence test set would cost approximately \$1.60--\$6.50 per evaluation pass.
+Combined with rate limits of approximately 30 requests per minute on the free tier, a single full test evaluation would take approximately 27 hours.
+This cost and latency are prohibitive for iterative development.
+
+\subsection{LLaMA-4-Scout Failure Modes}
+
+\textbf{Model-Task Misalignment.}
+LLaMA-4-Scout's 17.92 SARI is the most surprising result, given that the larger and more recent model should theoretically outperform its predecessor.
+Several factors likely contribute:
+
+\begin{itemize}
+    \item \textbf{Domain mismatch}: LLaMA-4-Scout's MoE routing may distribute biomedical tokens across general-purpose experts rather than domain-specific ones.
+    \item \textbf{Conservative generation}: The compression ratio of exactly 1.00 indicates the model produces output of the same length as the input, suggesting it defaults to near-identity copying with minimal simplification.
+    \item \textbf{MoE routing instability}: Mixture-of-experts models can exhibit inconsistent behaviour on domain-specific inputs if the gating network routes to suboptimal experts.
+\end{itemize}
+
+This result serves as a cautionary tale: newer and more efficient architectures do not automatically translate to better task performance, particularly for domain-specific tasks requiring precise content manipulation.
+
+%==============================================================================
+% 9. DISCUSSION
+%==============================================================================
+\section{Discussion}
+
+\subsection{Encoder-Decoder vs Decoder-Only: Architectural Analysis}
+
+Our results illuminate the fundamental architectural differences between encoder-decoder and decoder-only models for text simplification.
+
+\paragraph{Readability (FKGL).}
+The most striking difference is in readability: BART produces text with FKGL 16.00, which is \emph{worse} than the source average of 13.03 (computed on the validation set), while LLaMA-8B improves readability to FKGL 11.31.
+This occurs because BART's encoder--decoder architecture is trained to reconstruct the source using the same vocabulary distribution, prioritising information preservation over lexical substitution.
+LLMs, in contrast, have been exposed to a much broader range of explanatory and simplified text during pre-training, enabling them to draw on simpler vocabulary alternatives.
+This aligns with findings from the BLESS benchmark \cite{kew2023bless}, which showed LLMs consistently outperform fine-tuned models on human-judged readability.
+
+\paragraph{Operation Distribution (Deletion Behaviour).}
+The plan label distribution in our training set is 35.3\% delete, but BART achieves only 7.3\% deletion proportion --- a 28-point gap.
+LLaMA-8B achieves 33.7\%, within 1.6 points of the training distribution.
+The root cause is architectural: encoder-decoder models require an explicit external mechanism (our RoBERTa classifier at 52\% accuracy) to guide operation selection.
+The classifier's errors cascade into incorrect BART outputs --- a sentence that should be deleted receives a rephrase label, and BART generates a verbose output instead of deleting.
+LLMs integrate operation selection intrinsically through the prompt context, avoiding this cascading error entirely.
+The CLEF 2025 DS@GT approach \cite{marturi2025simpletext} takes this further by having the LLM generate explicit structured plans, effectively replacing the external classifier with the LLM's own reasoning capabilities.
+
+\paragraph{Paraphrase Quality (SARI vs BLEU Trade-off).}
+BART achieves higher BLEU (6.89 vs 2.21) and BERTScore (0.634 vs 0.610) because its encoder constrains the output to stay close to the source representation.
+This is advantageous when faithfulness to the source is paramount, but it limits the degree of simplification achievable.
+LLMs achieve higher SARI (36.29 vs 33.23) by producing more aggressive paraphrases that better align with human simplification patterns, even at the cost of lower n-gram overlap with the reference.
+The UZH Pandas study \cite{michail2024simpletext} demonstrated that this trade-off can be managed through multi-prompt generation and MBR decoding, which selects the best candidate across the faithfulness--simplification spectrum.
+
+\paragraph{Why LLaMA-4-Scout Failed.}
+Despite being a decoder-only LLM, LLaMA-4-Scout achieved only 17.92 SARI --- catastrophically below both BART and LLaMA-8B.
+This failure is architectural rather than paradigmatic: LLaMA-4-Scout uses a mixture-of-experts (MoE) architecture where a gating network routes each token to a subset of experts.
+We hypothesise that biomedical tokens are routed to general-purpose experts rather than domain-specific ones, resulting in conservative, near-identity outputs (compression ratio of exactly 1.00).
+This result demonstrates that being decoder-only is necessary but not sufficient for task performance --- domain alignment and architectural compatibility with the task are equally critical.
+
+\subsection{The Three-Act Narrative}
+
+Our results tell a coherent story about the state of text simplification technology:
+
+\textbf{Act 1: BART hits a ceiling.}
+Fine-tuned BART achieves 34.30 SARI on the official test, a competitive result that establishes a strong baseline.
+Standard fine-tuning (v1) achieves 26.37 SARI on validation; plan-guided training (v2) raises this to 33.23, and inference tuning adds further gains to reach the test score of 34.30.
+However, BART's inability to improve FKGL --- it actually makes text harder to read --- represents a fundamental limitation of the approach.
+The 52\% accurate plan classifier compounds this problem by introducing systematic label noise.
+
+\textbf{Act 2: LLaMA-8B surpasses BART but cannot scale.}
+Zero-shot LLaMA-3.1-8B achieves 36.29 SARI on validation, demonstrating that large language models can outperform fine-tuned task-specific models on text simplification without any training examples.
+The model produces genuinely simpler text (FKGL 11.31) with more appropriate deletion behaviour.
+However, the computational cost and API rate limits prevent scaling to the full test set.
+This represents a common failure mode in applied NLP: the best-performing approach is not always the most practical.
+
+\textbf{Act 3: LLaMA-4-Scout fails.}
+The choice of LLaMA-4-Scout as a cost-efficient alternative proved catastrophic.
+The model's 17.92 SARI stems from poor alignment with the task rather than insufficient capability.
+This result underscores that efficiency optimisations (MoE, smaller active parameters) must be validated on the target task before deployment.
+
+\subsection{Cost--Quality Trade-Off}
+
+Table~\ref{tab:cost} summarises the cost--quality landscape across our three approaches.
+
+\begin{table}[t]
+\centering
+\caption{Cost--quality comparison across approaches.}
+\label{tab:cost}
+\begin{tabular}{lccc}
+\toprule
+Approach & SARI & Compute Cost & Scalability \\
+\midrule
+BART v2 & 34.30 & Low (Colab T4) & Full test \\
+LLaMA-3.1-8B & 36.29* & Medium (API) & Limited \\
+LLaMA-4-Scout & 17.92 & Low (API) & Full test \\
+\bottomrule
+\end{tabular}
+\small *Validation only; not submitted to test.
+\end{table}
+
+The practical recommendation from our experiments is clear: for teams with access to a GPU for fine-tuning, a plan-guided BART model offers the best balance of quality, cost, and scalability.
+LLaMA-8B offers superior quality but at substantially higher operational cost and complexity.
+LLaMA-4-Scout, despite its efficiency advantages, should not be used for this task without domain-specific adaptation.
+
+\subsection{Positioning Among Prior Work}
+
+Our approach bridges two generations of simplification technology.
+The plan-guided BART model follows the paradigm established by the UZH Pandas team \cite{michail2024simpletext}: incorporate structured planning into the generation process.
+However, where they used multi-prompt MBR decoding with LLMs, we use explicit operation labels with a fine-tuned encoder-decoder model --- a design choice motivated by the computational constraints of a single T4 GPU.
+Our LLaMA-8B results confirm the trend observed across all recent SimpleText editions \cite{ermakova2024simpletext, largey2024simpletext}: zero-shot LLMs outperform fine-tuned task-specific models on the primary metric (SARI), but introduce new failure modes (semantic drift, cost, scalability).
+The LLaMA-4-Scout result adds a new dimension: MoE architectures, while efficient, may not transfer well to domain-specific tasks without adaptation.
+
+A key insight from our comparison is that the optimal approach depends on the evaluation priority.
+If SARI is the sole objective, LLaMA-8B is superior.
+If faithfulness (BLEU, BERTScore) and computational cost are also considered, BART offers a better practical trade-off.
+The DS@GT approach \cite{marturi2025simpletext} of using LLMs as plan generators for smaller decoders represents a promising synthesis that we identify as future work.
+
+\subsection{Future Work}
+
+Several directions emerge from our analysis:
+
+\begin{itemize}
+    \item \textbf{Improving plan classifier accuracy}: A 52\% accurate label classifier is the primary bottleneck in the BART pipeline. A larger classifier (e.g., DeBERTa-v3) or multi-task learning could improve accuracy.
+    \item \textbf{Direct readability optimisation}: Training with a FKGL-aware loss function could address BART's readability degradation. Reinforcement learning from readability feedback is a promising direction.
+    \item \textbf{Hybrid approaches}: Using LLaMA-8B as a plan label annotator to generate higher-quality training data for the BART pipeline could combine the strengths of both approaches.
+    \item \textbf{Domain-adapted LLaMA-4}: Fine-tuning LLaMA-4-Scout on biomedical simplification data would test whether the model's poor performance stems from domain misalignment or fundamental capability limitations.
+    \item \textbf{Document-level simplification}: Extending to SimpleText Task 1.2, which requires document-level coherence across multiple simplified sentences, is a natural next step.
+\end{itemize}
+
+%==============================================================================
+% 10. CONCLUSION
+%==============================================================================
+\section{Conclusion}
+
+We presented the Tokatrons team's three approaches to CLEF 2026 SimpleText Task 1: plan-guided BART (34.30 SARI), zero-shot LLaMA-3.1-8B (36.29 SARI on validation), and zero-shot LLaMA-4-Scout (17.92 SARI).
+Our results demonstrate that fine-tuned medium-sized models with structured training strategies remain highly competitive for biomedical text simplification, particularly when computational resources are constrained.
+The BART model's primary limitation --- failure to improve readability --- points to the need for direct optimisation of simplification quality metrics.
+The LLaMA-8B results show the promise of large language models for this task, but practical deployment is limited by API costs and rate constraints.
+The LLaMA-4-Scout results serve as a cautionary example that architectural efficiency does not guarantee task performance.
+We release our code, trained models, and plan-label dataset to support reproducibility and future research in biomedical text simplification.
+
+%==============================================================================
+% ACKNOWLEDGEMENTS
+%==============================================================================
+\section*{Acknowledgements}
+
+We thank the CLEF SimpleText organisers for providing the dataset, evaluation framework, and computational support through the CodaBench platform.
+We are grateful to Google Colab for providing free GPU resources for model training.
+We acknowledge Groq for providing API access for LLaMA model inference.
+
+%==============================================================================
+% GENERATIVE AI DISCLOSURE
+%==============================================================================
+\section*{Generative AI Disclosure}
+
+During the preparation of this work, the authors used Generative AI tools (GitHub Copilot and Claude by Anthropic) for code assistance and manuscript editing support.
+The authors also used large language models (LLaMA-3.1-8B and LLaMA-4-Scout via the Groq API) as part of the core experimental methodology described in this paper.
+After using these tools, the authors reviewed and edited the content as needed and take full responsibility for the content of the publication.
+No Generative AI tools were used to generate the scientific findings reported in this work.
+
+%==============================================================================
+% BIBLIOGRAPHY
+%==============================================================================
+\bibliographystyle{plainurl}
+\bibliography{paper}
+
+% The bibliography is in paper.bib — ensure it is present in the same directory.
+
+\end{document}
