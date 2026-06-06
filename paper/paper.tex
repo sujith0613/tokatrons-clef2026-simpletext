@@ -45,16 +45,16 @@ orcid=0009-0001-0671-6195,
 url=https://github.com/sujith0613,
 ]
 
-\author[1]{Varghese K James}[%
-email=varghesekj18@gmail.com,
-orcid=0009-0002-9977-768X,
-url=https://github.com/vicfic18,
-]
-
 \author[1]{Sree Krishna S}[%
 email=sreekrishnassk166@gmail.com,
 orcid=0009-0000-2362-165X,
 url=https://github.com/SSK166,
+]
+
+\author[1]{Varghese K James}[%
+email=varghesekj18@gmail.com,
+orcid=0009-0002-9977-768X,
+url=https://github.com/vicfic18,
 ]
 
 \author[1]{Prabavathy Balasundaram}[%
@@ -295,7 +295,7 @@ The best configuration (num\_beams=2, length\_penalty=1.0, no\_repeat\_ngram\_si
 At inference time, the plan label is not available.
 	We train a separate RoBERTa-base classifier \cite{roberta2019} to predict the operation label from the source sentence alone.
 The classifier is fine-tuned on the 11,510 training pairs for 3 epochs with a learning rate of 2e-5 and batch size of 16.
-It achieves 52\% accuracy across the five classes, which is significantly above the random baseline (20\%) but introduces a substantial error source: nearly half of all predictions select the wrong operation label, which then guides the BART decoder in a suboptimal direction.
+It achieves 52.6\% accuracy across the five classes, which is significantly above the random baseline (20\%) but introduces a substantial error source: nearly half of all predictions select the wrong operation label, which then guides the BART decoder in a suboptimal direction.
 
 \subsection{Approach 2: Zero-Shot LLaMA-3.1-8B}
 
@@ -631,7 +631,7 @@ Our results demonstrate that fine-tuned medium-sized models with structured trai
 The BART model's primary limitation --- failure to improve readability --- points to the need for direct optimisation of simplification quality metrics.
 The LLaMA-8B results show the promise of large language models for this task, but practical deployment is limited by API costs and rate constraints.
 The LLaMA-4-Scout results serve as a cautionary example that architectural efficiency does not guarantee task performance.
-We release our code, trained models, and plan-label dataset at \url{https://github.com/sujith0613/tokatrons-clef2026-simpletext} to support reproducibility and future research in biomedical text simplification.
+We release our code and plan-label dataset at \url{https://github.com/sujith0613/tokatrons-clef2026-simpletext} and our trained models on the Hugging Face Hub: BART v1~\footnote{\url{https://huggingface.co/winner0613/tokatrons-bart-cochrane-11}}, BART v2 (plan-guided)~\footnote{\url{https://huggingface.co/winner0613/tokatrons-bart-plan-guided}}, BART v3~\footnote{\url{https://huggingface.co/winner0613/tokatrons-bart-plan-guided-v3}}, RoBERTa plan classifier~\footnote{\url{https://huggingface.co/winner0613/tokatrons-roberta-plan-classifier}}, DeBERTa plan classifier~\footnote{\url{https://huggingface.co/winner0613/tokatrons-deberta-plan-classifier}}, DistilBERT plan classifier~\footnote{\url{https://huggingface.co/winner0613/tokatrons-distilbert-plan-classifier}}, and the balanced RoBERTa classifier~\footnote{\url{https://huggingface.co/winner0613/tokatrons-roberta-balanced-classifier}} to support reproducibility and future research in biomedical text simplification.
 
 %==============================================================================
 % ACKNOWLEDGMENTS
