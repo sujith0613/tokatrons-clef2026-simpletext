@@ -30,3 +30,12 @@ Thumbs.db
 
 session-details*.md
 
+# Internal docs (not for public repo)
+CLAUDE.md
+memory.md
+report.md
+preferences.md
+doc/
+sources/
+tokatrons_task11_LLaMA8B_val/
+
