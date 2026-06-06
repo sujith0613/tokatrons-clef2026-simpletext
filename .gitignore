@@ -16,6 +16,9 @@ __pycache__/
 *.synctex.gz
 *.xdv
 paper/paper.pdf
+paper/*.abs
+paper/*.xmpdata
+.opencode/
 
 # OS
 Thumbs.db
