@@ -2,53 +2,70 @@
 % Plan-Guided BART and Zero-Shot LLM Approaches to Biomedical Text Simplification
 % CEUR-WS Working Notes Template
 
-\documentclass[twocolumn]{ceurart}
+\RequirePackage[utf8]{inputenc}
+\documentclass{ceurart}
+
+\sloppy
 
 % --- Packages ---
-\usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{natbib}
 \usepackage{microtype}
+\microtypesetup{expansion=false}
 \usepackage{float}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{hyperxmp}
 
 % --- Metadata ---
-\newcommand{\cpaper}{Tokatrons at CLEF 2026 SimpleText Task 1: Plan-Guided BART and Zero-Shot LLM Approaches to Biomedical Text Simplification}
+\newcommand{\cpaper}{Tokatrons at the CLEF 2026 SimpleText Track: Plan-Guided BART and Zero-Shot LLM Approaches to Biomedical Text Simplification}
 
 % --- Copyright ---
+\copyrightyear{2026}
 \copyrightclause{Copyright for this paper by its authors. Use permitted under Creative Commons License Attribution 4.0 International (CC BY 4.0).}
 
 % --- Conference info ---
-\conference{CLEF 2026 -- Conference and Labs of the Evaluation Forum, September 7--11, 2026, Aarhus, Denmark}
+\conference{CLEF 2026 -- Conference and Labs of the Evaluation Forum, September 21--24, 2026, Jena, Germany}
 
 % --- Document ---
 \begin{document}
 
 \title{\cpaper}
+\title[mode=sub]{Notebook for the SimpleText Lab at CLEF 2026}
+
+\tnotemark[1]
 
 % Authors
 \author[1]{Sujith M}[%
-email=sujithsuji0321@gmail.com,
-orcid=0000-0000-0000-0000,
-]
-
-\author[1]{Sree Krishna S}[%
-email=sreekrishna0101@gmail.com,
+email=Sujithmaris@gmail.com,
+orcid=0009-0001-0671-6195,
+url=https://github.com/sujith0613,
 ]
 
 \author[1]{Varghese K James}[%
-email=varghesekjames@gmail.com,
+email=varghesekj18@gmail.com,
+orcid=0009-0002-9977-768X,
+url=https://github.com/vicfic18,
+]
+
+\author[1]{Sree Krishna S}[%
+email=sreekrishnassk166@gmail.com,
+orcid=0009-0000-2362-165X,
+url=https://github.com/SSK166,
 ]
 
 \author[1]{Prabavathy Balasundaram}[%
-email=prabavathy.cse@ssn.edu.in,
+email=prabavathyb@ssn.edu.in,
+orcid=0000-0003-3903-0410,
+url=https://www.ssn.edu.in/computer-science-and-engineering-department/faculty/dr-b-prabavathy-associate-professor/,
 ]
 
-\address[1]{Department of Computer Science and Engineering, Sri Sivasubramaniya Nagar College of Engineering, Chennai, 603110, India}
+\address[1]{Sri Sivasubramaniya Nadar College of Engineering, Chennai, India}
+
+\tnotetext[1]{Submitted as a working note to the SimpleText Task 1 shared task at CLEF 2026. Code and models are publicly available at \url{https://github.com/sujith0613/tokatrons-clef2026-simpletext}.}
 
 % Abstract
 \begin{abstract}
@@ -66,15 +83,17 @@ Our findings highlight that fine-tuned medium-sized models with structured train
 Text simplification \sep biomedical NLP \sep BART \sep LLaMA \sep plan-guided generation \sep CLEF SimpleText
 \end{keywords}
 
+\maketitle
+
 %==============================================================================
 % 1. INTRODUCTION
 %==============================================================================
 \section{Introduction}
 
 Biomedical text simplification is the task of transforming complex medical and scientific language into more accessible forms without losing critical information.
-It addresses a significant barrier in healthcare communication: patients, caregivers, and even non-specialist healthcare providers often struggle to understand the dense technical language found in medical literature, clinical guidelines, and systematic reviews \cite{simpletext2026}.
+It addresses a significant barrier in healthcare communication: patients, caregivers, and even non-specialist healthcare providers often struggle to understand the dense technical language found in medical literature, clinical guidelines, and systematic reviews \cite{ermakova2026clef}.
 
-The CLEF 2026 SimpleText Task 1 \cite{simpletext2026} formalizes this challenge as a sentence-level simplification task.
+The CLEF 2026 SimpleText Task 1 \cite{bakker2026task1} formalizes this challenge as a sentence-level simplification task.
 Given a complex sentence from a biomedical source, the goal is to produce a simplified version that preserves the core meaning while improving readability for a general audience.
 The task uses the Cochrane Database of Systematic Reviews as its source domain, which contains highly technical sentences summarizing medical evidence.
 
@@ -125,7 +144,7 @@ This suggests that LLMs internalise the simplification operation distribution fr
 %==============================================================================
 \section{Task Description}
 
-SimpleText Task 1 \cite{simpletext2026} targets sentence-level biomedical text simplification.
+SimpleText Task 1 \cite{bakker2026task1} targets sentence-level biomedical text simplification.
 Given a source sentence \(s\) from a biomedical text, the system must generate a simplified sentence \(t\) that:
 
 \begin{itemize}
@@ -334,7 +353,6 @@ We use the official SimpleText evaluation suite, which computes:
     \item \textbf{BLEU} \cite{bleu2002}: Measures n-gram precision against the reference, with a brevity penalty.
     \item \textbf{BERTScore} \cite{bertscore2020}: Computes pairwise cosine similarity between token embeddings of system output and reference using BERT.
     \item \textbf{FKGL} \cite{flesch1948}: The Flesch-Kincaid Grade Level, estimating the US school grade required to understand the text.
-    \item \textbf{Flesch Reading Ease (FRE)} \cite{flesch1948}: A complementary readability score ranging from 0 (very difficult) to 100 (very easy), computed simultaneously with FKGL.
     \item \textbf{Compression Ratio}: The ratio of source length to system output length (in tokens).
     \item \textbf{Deletion Proportion}: The fraction of source tokens absent from the system output.
     \item \textbf{Identical to Source}: The fraction of system outputs that are identical to the source sentence.
@@ -395,14 +413,14 @@ Table~\ref{tab:test-results} shows the CodaBench official test results.
 
 \begin{table}[t]
 \centering
-\caption{Official CodaBench test set results.}
+\caption{Official CodaBench test set results with post-hoc analysis.\newline\small{SARI from official CodaBench evaluation. Remaining metrics computed on English subset of test data.}}
 \label{tab:test-results}
-\begin{tabular}{lcccccc}
+\begin{tabular}{lccccc}
 \toprule
-Submission & SARI & BLEU & BERTScore & FKGL & Comp. & Read. (FRE) \\
+Submission & SARI & BLEU & BERTScore & FKGL & Comp. \\
 \midrule
-BART v2 & \textbf{34.30} & 2.10 & \textbf{0.622} & 16.35 & \textbf{2.18} & 6.12 \\
-LLaMA-4-Scout & 17.92 & \textbf{2.29} & 0.510 & \textbf{12.03} & 1.00 & \textbf{4.72} \\
+BART v2 & \textbf{34.30} & 2.10 & \textbf{0.622} & 16.35 & \textbf{2.18} \\
+LLaMA-4-Scout & 17.92 & \textbf{2.29} & 0.510 & \textbf{12.03} & 1.00 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -616,30 +634,24 @@ The LLaMA-4-Scout results serve as a cautionary example that architectural effic
 We release our code, trained models, and plan-label dataset at \url{https://github.com/sujith0613/tokatrons-clef2026-simpletext} to support reproducibility and future research in biomedical text simplification.
 
 %==============================================================================
-% ACKNOWLEDGEMENTS
+% ACKNOWLEDGMENTS
 %==============================================================================
-\section*{Acknowledgements}
-
+\begin{acknowledgments}
 We thank the CLEF SimpleText organisers for providing the dataset, evaluation framework, and computational support through the CodaBench platform.
 We are grateful to Google Colab for providing free GPU resources for model training.
 We acknowledge Groq for providing API access for LLaMA model inference.
+\end{acknowledgments}
 
 %==============================================================================
 % GENERATIVE AI DISCLOSURE
 %==============================================================================
-\section*{Generative AI Disclosure}
+\section*{Declaration on Generative AI}
 
-During the preparation of this work, the authors used Generative AI tools (GitHub Copilot and Claude by Anthropic) for code assistance and manuscript editing support.
-The authors also used large language models (LLaMA-3.1-8B and LLaMA-4-Scout via the Groq API) as part of the core experimental methodology described in this paper.
-After using these tools, the authors reviewed and edited the content as needed and take full responsibility for the content of the publication.
-No Generative AI tools were used to generate the scientific findings reported in this work.
+During the preparation of this work, the author(s) used LLaMA-3.1-8B and LLaMA-4-Scout (via the Groq API) to: Generate text for the experimental methodology (Section~5). The author(s) used GitHub Copilot and Claude by Anthropic to: Grammar and spelling check, Code generation. After using these tool(s)/service(s), the author(s) reviewed and edited the content as needed and take(s) full responsibility for the publication's content.
 
 %==============================================================================
 % BIBLIOGRAPHY
 %==============================================================================
-\bibliographystyle{plainurl}
 \bibliography{paper}
-
-% The bibliography is in paper.bib — ensure it is present in the same directory.
 
 \end{document}

@@ -326,9 +326,9 @@ Identical to Source  0.005      0.000
 
 ### Table 3: Official Test Set (CodaBench)
 ```
-Submission              SARI    BLEU   BERTScore  FKGL   Comp.   Read.
-BART v2                 34.30   2.10   0.622      16.35  2.18    6.12
-LLaMA-4-Scout           17.92   2.29   0.510      12.03  1.00    4.72
+Submission              SARI    BLEU   BERTScore  FKGL   Comp.
+BART v2                 34.30   2.10   0.622      16.35  2.18
+LLaMA-4-Scout           17.92   2.29   0.510      12.03  1.00
 ```
 
 ### Table 4: Inference Tuning Grid Search (BART v2)
@@ -344,6 +344,6 @@ num_beams   length_penalty   no_repeat_ngram   SARI (oracle)
 ### Table 5: Groq API Cost Estimates for Full Test Set
 ```
 Model              Cost per 1M inp.   Cost per 1M outp.   Est. total cost (48,809 sents)
-LLaMA-3.1-8B       $0.27              $1.10               $1.59–$6.49
+LLaMA-3.1-8B       \$0.27              \$1.10               \$1.60–\$6.50
 LLaMA-4-Scout      $0.15              $0.60               $0.88–$3.54
 ```

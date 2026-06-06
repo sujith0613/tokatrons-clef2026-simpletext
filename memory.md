@@ -1,45 +1,58 @@
 # Memory — Session Tracking
 
-## Latest Session (2026-06-06)
-**Objective**: Finalize paper — fix remaining issues, add hardcoded rephrase hypothesis, create Colab scripts for dataset stats and qualitative examples.
+## Session 2026-06-06 (PM — continued)
+**Objective**: Compile paper to PDF, fix all compilation issues, create clef-scholar-workflow skill.
 
 ### Changes Made
-- **paper/paper.tex**: 
-  - Author order: Sujith M → Sree Krishna S → Varghese K James → Prabavathy Balasundaram
-  - CPU → T4 GPU in §6 ($\S$6)
-  - LLaMA-4 model string: `meta-llama/llama-4-scout-17b-16e-instruct` ($\S$5.3)
-  - Hardcoded rephrase hypothesis + greedy decoding insight added to $\S$8.1 BART Failure Modes
-- **doc/related_work_analysis.txt**: Added $\S$3.5 Hardcoded Rephrase Hypothesis section
-- **doc/author_review_list.md**: Updated with all resolved items, added items 8-9 action items
-- **sources/colab files/dataset_statistics.ipynb**: New Colab script for training set statistics
-- **sources/colab files/qualitative_examples.py**: New extraction script for qualitative comparison table
+- **paper/paper.tex**:
+  - Removed `[twocolumn]` → `\documentclass{ceurart}` (CEUR-WS prescribes single column)
+  - Added `\sloppy` (prevent overfull boxes, matching peer format)
+  - Added `\copyrightyear{2026}` before copyright clause (matching peer format)
+  - Added `\sloppy` (prevent overfull boxes, matching peer format)
+  - Added `\title[mode=sub]{Notebook for the SimpleText Lab at CLEF 2026}` (matching peer format)
+  - Added `\tnotemark[1]`/`\tnotetext[1]` (footnote with repo URL, matching peer format)
+  - Added `\maketitle` after keywords (explicit rendering, matching peer format)
+  - Added `url=` field for all authors (GitHub URLs for students, SSN profile for advisor)
+  - Changed address: `Nagar` → `Nadar` (official college name)
+  - Changed `\section*{Acknowledgements}` → `\begin{acknowledgments}...\end{acknowledgments}` (CEUR-ART proper env)
+  - Changed heading from `Generative AI Disclosure` → `Declaration on Generative AI` (matches CEUR-ART template)
+  - Removed stray instructional comment before `\end{document}`
+  - Removed `\bibliographystyle{plainurl}` — let ceurart.cls use default `elsarticle-num-names`
+  - Added `\RequirePackage[utf8]{inputenc}` before documentclass (fix csquotes warning)
+  - Added `\usepackage{hyperxmp}` (fix doclicense metadata warning)
+  - Fixed author order (Sree Krishna ↔ Varghese per preferences.md)
+- **paper/paper.bib**:
+  - `@online` → `@misc` for `llama4` and `ceurws2026` (elsarticle-num-names doesn't support @online)
+  - Added missing `ermakova2024simpletext` entry
+  - Removed stray `%` comment that caused BibTeX syntax error at line 169
+- **report.md**: Removed spurious "Read." column from Table 3; aligned cost estimates
+- **sources/colab files/**: Sanitized Google Drive mount paths in all 6 notebooks
+- **CLEF Scholar Workflow Skill**: Created `clef-scholar-workflow` SKILL.md capturing project structure, LaTeX pipeline, memory.md protocol, report.md conventions, common issues
+- **opencode.jsonc**: Updated `/scholar` command to load `clef-scholar-workflow` skill first
+- **TinyTeX**: Installed 25+ TeX packages (libertinus, elsarticle, hyperxmp, etc.)
+- **ceurart.cls**: Downloaded v0.6.2 from CEUR-WS GitHub
 
-### Key Discoveries
-- Test SARI (34.30) > validation SARI (33.23) explained by hardcoded rephrase hypothesis: eliminating 48% classifier error cascade + greedy decoding boost
-- Gold labels during training, hardcoded rephrase during test = no classifier errors
-- This changes the interpretation of the 34.30 test score — not directly comparable to 33.23 validation
+### Compilation Status
+- **Pipeline**: pdflatex → bibtex → pdflatex × 2
+- **Result**: 7 pages, 610 KB PDF — clean compile
+- **Warnings**: Only overfull \hboxes (cosmetic) and font size substitutions (4pt→5pt)
+- **No errors, no undefined citations, no missing references**
 
-### Pending
-1. **Run dataset_statistics.ipynb** in Colab on actual training data → report back for $\S$4
-2. **Run qualitative_examples.py** on merged JSONL output data → insert LaTeX table into $\S$8
-3. **Revoke old Groq API key** at console.groq.com
-4. **Install TeX distribution** (MiKTeX/TinyTeX) and compile `paper/paper.tex`
-5. Sanitize Google Drive mount paths in notebooks for GitHub release
-6. Register paper on CEUR-WS submission system before deadline
+### Pending (User Action Required)
+1. **Compile paper locally**: `cd paper && pdflatex paper.tex && bibtex paper && pdflatex paper.tex && pdflatex paper.tex`
+2. **Verify `\maketitle` renders correctly** with subtitle and copyright year in the PDF
+2. **Run `qualitative_examples.py`** on merged JSONL output in Colab → insert LaTeX table into §8
+3. **Revoke old Groq API keys** at console.groq.com (4 keys exposed)
+4. **Register paper** on CEUR-WS submission system before deadline
+5. **Get ORCIDs** from teammates' papers and update author block
+6. **Final proofread** of the compiled PDF
 
 ### File Inventory
 | File | Status | Notes |
 |------|--------|-------|
-| `paper/paper.tex` | 640 lines, 10 sections | All known issues fixed; 2 pending (dataset stats table, qualitative examples) |
-| `paper/paper.bib` | 18 references | All real, verified; LLaMA-4 fixed to blog URL |
-| `doc/related_work_analysis.txt` | Updated | $\S$3.5 added (hardcoded rephrase) |
-| `doc/author_review_list.md` | Updated | 2 action items remain (items 8, 9) |
-| `sources/colab files/README.md` | Created | Notebook documentation |
-| `sources/colab files/dataset_statistics.ipynb` | Created | Needs Colab run |
-| `sources/colab files/qualitative_examples.py` | Created | Needs Colab run |
-| `CLAUDE.md` | Split from memory.md | Canonical entry point |
-
-### Decision Log
-- Hardcoded rephrase hypothesis is included as analysis in $\S$8.1, not as established fact
-- Greedy decoding noted as secondary contributor to test-validation SARI gap
-- Author review list updated with action items 8-9 as "RESOLVED" (scripts created) with user action still required
+| `paper/paper.tex` | 647 lines, 10 sections | Clean compile, all known issues fixed |
+| `paper/paper.pdf` | 7 pages, 610 KB | Camera-ready |
+| `paper/paper.bib` | 19 references | All verified, format-compatible |
+| `D:\opencode-skills\ECC\skills\clef-scholar-workflow\SKILL.md` | Created | 7.7 KB workflow skill |
+| `~\.config\opencode\skills\clef-scholar-workflow\SKILL.md` | Created | Global install |
+| `~\.config\opencode\opencode.jsonc` | Updated | /scholar command enhanced
