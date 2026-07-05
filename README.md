@@ -41,7 +41,7 @@ All models are hosted at `https://huggingface.co/winner0613`:
 ```bibtex
 @inproceedings{tokatrons2026simpletext,
   title={SSN Tokatrons at the {CLEF} 2026 {SimpleText} Track: {Plan-Guided} {BART} and {Zero-Shot} {LLM} Approaches to Biomedical Text Simplification},
-  author={Sujith, M. and Sree Krishna, S. and Varghese K. James and Prabavathy, B.},
+  author={Sujith M. and Sree Krishna S. and Varghese K. James and Prabavathy Balasundaram},
   booktitle={CLEF 2026 Working Notes},
   year={2026},
   publisher={CEUR-WS.org}
