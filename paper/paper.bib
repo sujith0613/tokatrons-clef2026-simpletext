@@ -4,9 +4,7 @@
 
 % --- Task Overview Papers (CEUR-WS) ---
 @inproceedings{bakker2026task1,
-  author    = {Jan Bakker and Liana Ermakova and St{\'e}phane Huet and
-              Eric SanJuan and Jaap Kamps and H{\'e}l{\`e}ne Bretel and
-              Oleg Zubarev and Pavel Braslavski and Irina Ovchinnikova},
+  author    = {Jan Bakker and Liana Ermakova and Jaap Kamps},
   title     = {{Overview of the CLEF 2026 SimpleText Task 1:
                  Simplify Scientific Text}},
   booktitle = {{Working Notes of CLEF 2026}},
@@ -40,20 +38,6 @@
 }
 
 % --- Track Overview (LNCS Springer) ---
-@inproceedings{ermakova2026clef,
-  author    = {Liana Ermakova and St{\'e}phane Huet and Eric SanJuan and
-              Jaap Kamps and H{\'e}l{\`e}ne Bretel and Oleg Zubarev and
-              Pavel Braslavski and Irina Ovchinnikova},
-  title     = {{Overview of CLEF 2026 SimpleText Track:
-                 Simplify Scientific Texts (and Nothing More)}},
-  booktitle = {Experimental IR Meets Multilinguality, Multimodality, and
-               Interaction. Proceedings of the Seventeenth International
-               Conference of the CLEF Association (CLEF 2026)},
-  series    = {Lecture Notes in Computer Science},
-  publisher = {Springer},
-  year      = {2026}
-}
-
 % --- SimpleText 2024 Overview ---
 @inproceedings{ermakova2024simpletext,
   author    = {Liana Ermakova and St{\'e}phane Huet and Eric SanJuan and
@@ -130,11 +114,16 @@
 }
 
 % --- Flesch-Kincaid ---
-@book{flesch1948,
-  author    = {Rudolf Flesch},
-  title     = {{The Art of Readable Writing}},
-  year      = {1948},
-  publisher = {Harper \& Row}
+@techreport{kincaid1975,
+  author      = {J. Peter Kincaid and Robert P. Fishburne Jr. and
+                Richard L. Rogers and Brad S. Chissom},
+  title       = {{Derivation of New Readability Formulas (Automated
+                 Readability Index, Fog Count, and Flesch Reading
+                 Ease Formula) for Navy Enlisted Personnel}},
+  institution = {Naval Technical Training Command},
+  number      = {Research Branch Report 8-75},
+  year        = {1975},
+  address     = {Memphis, TN}
 }
 
 % --- RoBERTa ---
@@ -148,24 +137,31 @@
 }
 
 % --- Plan-Guided Generation (generic reference for the paradigm) ---
-@inproceedings{martin2021plan,
-  author    = {Louis Martin and Angela Fan and Eric de la Clergerie and
+@inproceedings{martin2022muss,
+  author    = {Louis Martin and Angela Fan and {\'E}ric de la Clergerie and
                Antoine Bordes and Beno{\^\i}t Sagot},
-  title     = {{Multilingual Unsupervised Sentence Simplification}},
-  booktitle = {Proceedings of the 59th Annual Meeting of the Association
-               for Computational Linguistics},
-  year      = {2021}
+  title     = {{MUSS: Multilingual Unsupervised Sentence Simplification by
+                Mining Paraphrases}},
+  booktitle = {Proceedings of the Thirteenth Language Resources and Evaluation
+               Conference (LREC 2022)},
+  year      = {2022},
+  pages     = {1651--1664},
+  address   = {Marseille, France},
+  publisher = {European Language Resources Association}
 }
 
-@inproceedings{narayan2021plan,
+@article{narayan2021planning,
   author    = {Shashi Narayan and Yao Zhao and Joshua Maynez and
-               G{\"o}n{\"u}l G{\"u}l and Ryan McDonald and Mirella Lapata and
-               Shay B. Cohen},
-  title     = {{Planning with Learned Entity Prompts for Abstractive Summarization}},
-  booktitle = {Transactions of the Association for Computational Linguistics},
-  year      = {2021},
+               Gon\c{c}alo Sim{\~{o}}es and Vitaly Nikolaev and
+               Ryan McDonald},
+  title     = {Planning with Learned Entity Prompts for Abstractive
+               Summarization},
+  journal   = {Transactions of the Association for Computational
+               Linguistics},
   volume    = {9},
-  pages     = {505--521}
+  pages     = {1475--1492},
+  year      = {2021},
+  doi       = {10.1162/tacl_a_00438}
 }
 
 % --- Previous SimpleText ---
@@ -270,4 +266,64 @@
   year   = {2026},
   url    = {https://ceur-ws.org/instructions.html},
   note   = {Accessed: 2026-06-06}
+}
+
+% --- CEUR 2026 Proceedings Volume ---
+@proceedings{clef:ceur26,
+  editor       = {Sánchez Salido, Eva and Barrón Cedeño, Alberto and García Seco de Herrera, Alba and Sean MacAvaney and Julia Maria Struß},
+  title     = {Working Notes of {CLEF} 2026: Conference and Labs of the Evaluation Forum},
+  booktitle     = {Working Notes of {CLEF} 2026: Conference and Labs of the Evaluation Forum},
+  series    = {{CEUR} Workshop Proceedings},
+  OPTvolume    = {},
+  publisher = {CEUR-WS.org},
+  year      = {2026},
+  OPTurl       = {},
+  OPTurn       = {},
+}
+
+% --- SimpleText Task Overviews (crossref style) ---
+@inproceedings{simpletext-lncs,
+  OPTauthor = {Liana Ermakova and others},
+  author    = {Liana Ermakova and Hosein Azarbonyad and Jan Bakker and Berkay Chakar and Gautam Kishore Shahi and Jaap Kamps},
+  title     = {Overview of the {CLEF 2026 SimpleText} Track: Simplify Scientific Texts (and Nothing More)},
+  crossref  = {clef:lncs26},
+}
+
+@inproceedings{simpletext-botl,
+  author    = {Nico Hofmann and Julian Dauenhauer and Nils Ole Dietzer and Idehen Daniel Idahor and Christin Katharina Kreutz},
+  title     = {{Lexical Simplification for Scientific Texts: Revisiting SARI in the Era of Modern LLMs}},
+  crossref  = {clef:lncs26},
+}
+
+@inproceedings{simpletext-1,
+  author    = {Jan Bakker and Liana Ermakova and Jaap Kamps},
+  title     = {{Overview of the CLEF 2026 SimpleText Task 1: Simplify Scientific Text}},
+  OPTpages     = {},
+  crossref  = {clef:ceur26},
+}
+
+@inproceedings{simpletext-2,
+  author    = {Berkay Chakar and Jan Bakker and Liana Ermakova and Jaap Kamps},
+  title     = {{Overview of the CLEF 2026 SimpleText Task 2: Identify and Avoid Hallucination}},
+  OPTpages     = {},
+  crossref  = {clef:ceur26},
+}
+
+@inproceedings{simpletext-3,
+  author    = {Gautam Kishore Shahi and Liana Ermakova and Jaap Kamps},
+  title     = {{Overview of the CLEF 2026 SimpleText Task 3: Research Area Classification}},
+  OPTpages     = {},
+  crossref  = {clef:ceur26},
+}
+
+% --- CLEF 2026 LNCS Proceedings ---
+@proceedings{clef:lncs26,
+  editor       = {Matthias Hagen and Martin Potthast and Benno Stein and Philipp Schaer and Eva Zangerle and Sean MacAvaney and Julia Maria Struß and Sánchez Salido, Eva and Barrón Cedeño, Alberto and García Seco de Herrera, Alba},
+  title        = {Experimental IR Meets Multilinguality, Multimodality, and Interaction. Proceedings of the Seventeenth International Conference of the CLEF Association (CLEF 2026)},
+  booktitle    = {Experimental IR Meets Multilinguality, Multimodality, and Interaction. Proceedings of the Seventeenth International Conference of the CLEF Association (CLEF 2026)},
+  series       = {Lecture Notes in Computer Science},
+  OPTvolume       = {},
+  OPTpages        = {},
+  publisher    = {Springer},
+  year         = {2026},
 }
